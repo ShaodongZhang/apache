@@ -1,0 +1,49 @@
+---
+- name: playbook for installing and starting apache package
+  hosts: centos7
+  vars: 
+    webserver_message: "I am running to the finish line."
+  tasks:
+    - name: Uninstall httpd package
+      yum:
+        name: httpd
+        state: absent
+   
+    - name: Stop httpd service
+      service:
+        name: httpd
+        state: stopped
+      register: stop_result
+      failed_when: "'FAILED' in stop_result.msg" 
+      ignore_errors: true
+#      failed_when: stop_result.stderr == "" 
+
+    - name: Debug message
+      debug:
+        var: stop_result
+
+    - name: Create index.html using Jinja2
+      template:
+        src: index.j2
+        dest: /var/www/html/index.html  
+      register: create_result
+      failed_when: "'FAILED' in stop_result.msg"
+      ignore_errors: true
+
+    - name: Sleep 10
+      tags: cmd
+      shell: "sleep 10"
+
+    - name: Remove file 
+      file:
+        path: /var/www/html/index.html
+        state: absent
+      ignore_errors: true
+
+    - name: Recursively remove directory
+      file:
+        path: /var/www/html
+        state: absent
+      ignore_errors: true
+
+
